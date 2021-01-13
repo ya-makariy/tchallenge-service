@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: yamakariy/tchallenge-service:latest
+        imagePullPolicy: Always
+        env:
+        - name: TCHALLENGE_MONGODB_HOST
+          value: mongodb
+        ports:
+        - containerPort: 4567
+        restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: backend
+  name: backend
+spec:
+  ports:
+  - name: "4567"
+    port: 4567
+    targetPort: 4567
+  selector:
+    app: backend
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Route
+metadata:
+  labels:
+    app: backend
+  name: route-backend
+spec:
+  host: backend.openshift.devops.t-systems.ru
+  path: /
+  to:
+    kind: Service
+    name: backend

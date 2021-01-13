@@ -1,0 +1,62 @@
+stages:
+    - build
+    - publish
+    - deployment
+
+build:
+    stage: build
+    tags:
+        - docker
+    image: openjdk:8-jdk
+    artifacts:
+        paths:
+            - source/build/libs/tchallenge-service.jar
+        expire_in: 1 week
+    script:
+        - cd source
+        - chmod +x ./gradlew
+        - ./gradlew build
+
+publish:
+    stage: publish
+    tags:
+        - docker
+    image: docker:latest
+    services:
+        - docker:dind
+    script: 
+        - docker build
+         --build-arg IMAGE_VERSION=${CI_COMMIT_REF_NAME/master/latest}
+          -t ${DOCKER_ID}/${CI_PROJECT_NAME}:${CI_COMMIT_REF_NAME/master/latest} .
+        - docker login --username ${DOCKER_ID} -p ${DOCKER_PASS}
+        - docker push ${DOCKER_ID}/${CI_PROJECT_NAME}:${CI_COMMIT_REF_NAME/master/latest}
+
+deployment-dev:
+    stage: deployment
+    tags:
+        - openshift
+    script:
+        - oc login ${OPENSHIFT_URL} -u ${OPENSHIFT_ID} -p ${OPENSHIFT_PASS} --insecure-skip-tls-verify=true
+        - oc project t-challenge-${CI_JOB_NAME}
+        - helm upgrade tbackend backend
+        #- oc apply -f backend-deployment.yml
+        - rm -Rf /home/gitlab-runner/builds/${CI_RUNNER_SHORT_TOKEN}/0/ya-makariy/
+    environment:
+        name: dev
+        url: https://openshift.devops.t-systems.ru:8443/console/project/t-challenge-${CI_JOB_NAME}/overview
+
+
+deployment-prod:
+    stage: deployment
+    tags:
+        - openshift
+    script:
+        - oc login ${OPENSHIFT_URL} -u ${OPENSHIFT_ID} -p ${OPENSHIFT_PASS} --insecure-skip-tls-verify=true
+        - oc project t-challenge-${CI_JOB_NAME}
+        - helm upgrade tbackend backend
+        #- oc apply -f backend-deployment.yml
+        - rm -Rf /home/gitlab-runner/builds/${CI_RUNNER_SHORT_TOKEN}/0/ya-makariy/
+    environment:
+        name: dev
+        url: https://openshift.devops.t-systems.ru:8443/console/project/t-challenge-${CI_JOB_NAME}/overview
+    when: manual

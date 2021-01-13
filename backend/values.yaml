@@ -1,0 +1,21 @@
+replicaCount: 1
+
+image:
+  repository: yamakariy/tchallenge-service
+  pullPolicy: Always
+  restartPolicy: Always
+  app: backend
+  containerPort: 4567
+  env:
+    name: TCHALLENGE_MONGODB_HOST
+    value: mongodb
+
+service:
+  name: "4567"
+  type: ClusterIP
+  port: 4567
+  targetPort: 4567
+
+route:
+  host: backend.openshift.devops.t-systems.ru
+  path: /

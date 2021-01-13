@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Values.image.app }}
+  name: {{ .Values.image.app }}
+spec:
+  ports:
+  - name: "4567"
+    port: {{ .Values.service.port }}
+    targetPort: {{ .Values.service.targetPort }}
+  selector:
+    app: {{ .Values.image.app }}
+status:
+  loadBalancer: {}
